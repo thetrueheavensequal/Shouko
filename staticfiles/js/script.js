@@ -1,0 +1,1 @@
+console.log("Shouko Bot Web Interface loaded");

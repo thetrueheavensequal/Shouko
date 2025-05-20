@@ -1,0 +1,28 @@
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #313030;
+}
+
+header{
+    background-color: #333;
+    color: #ffffff;
+    padding: 10px 0;
+    text-align: center;
+}
+
+nav a{
+    color: #ffffff;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+main{
+    max-width: 800px;
+    margin: 20px auto;
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
