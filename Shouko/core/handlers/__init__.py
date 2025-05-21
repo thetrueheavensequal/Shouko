@@ -1,1 +1,1 @@
-from dispatcher import app
+from core.dispatcher import app

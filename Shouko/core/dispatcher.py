@@ -1,6 +1,8 @@
 from pyrogram import Client, filters
 from django.conf import settings
-from core.tasks import process_message
+
+# Global filter to ignore bot's own messages
+ignore_bot_messages = ~filters.me
 
 app = Client(
     "Shouko",
@@ -9,20 +11,16 @@ app = Client(
     bot_token=settings.TG_BOT_TOKEN,
 )
 
-@app.on_message(filters.command("start") & filters.private)
-async def start_handler(client, message):
-    await message.reply(
-        "こ、こんにちは... I'm Shouko Komi. If you have something you'd like to talk about, please send me a message. I'll do my best to reply...! (Even if it's a little difficult for me sometimes.)"
-    )
+""" alive, antinsfw, approve, blacklist,
+blacklist_stickers, botadmins, bug, connection, cosplay, couple,
+cust_filters, disable, disasters, extra, feds, flood, fsub, fun,
+gban, hyperlink, imagegen, info, instadl, karma, locks, log_channel,
+mute, nekomode, newuserinfo, notes, palmchat, pkang, pokedex,
+purge, quotely, reverse, rules, sangmata, speedtest, sports,
+stickers, telegraph, tr, unbanall, users, warns, whispers, zombies
+ """
 
-@app.on_message(filters.command("help") & filters.private)
-async def help_handler(client, message):
-    await message.reply(
-        "You can send me any message, and I'll try to respond as best as I can. If I seem quiet, please be patient with me... Let's become friends!"
-    )
-
-@app.on_message(filters.text & filters.private & ~filters.command(["start", "help"]))
-async def ai_response(client, message):
-    if message.from_user and message.from_user.is_self:
-        return
-    process_message.delay(message.text, message.chat.id)
+# Import all handlers to register their commands and events
+from core.handlers import (
+    admin, afk, anime, chat, ban, ping, search, notebook, fun, welcome, start, help, waifu  # add any new handler modules here
+)

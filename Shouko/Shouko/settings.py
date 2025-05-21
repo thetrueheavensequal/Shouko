@@ -153,7 +153,7 @@ TG_API_HASH = os.getenv('TG_API_HASH')
 TG_BOT_TOKEN = os.getenv('TG_BOT_TOKEN')
 # Google GenAI Configuration
 GENAI_API_KEY = os.getenv('GENAI_API_KEY')
-
+ADMIN_USER_ID = os.getenv('ADMIN_USER_ID')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
