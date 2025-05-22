@@ -8,4 +8,4 @@ async def komi_ping(client, message):
     start = time.time()
     m = await message.reply("Komi is checking her heartbeat…")
     end = time.time()
-    await m.edit(f"Komi's heartbeat: `{int((end-start)*1000)}ms`")
+    await m.edit(f"❤️~ Komi's heartbeat: `{int((end-start)*1000)}ms` ~❤️")

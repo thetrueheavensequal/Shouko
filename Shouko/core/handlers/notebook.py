@@ -4,31 +4,29 @@ from pyrogram.types import (
     InlineKeyboardMarkup, InlineKeyboardButton, Message
 )
 import random
-from config import API_ID, API_HASH, BOT_TOKEN
+from core.dispatcher import app
 
 # Quiet and cute note-style images
 KOMI_NOTE_IMAGES = [
-    "https://files.catbox.moe/enzetg.jpg",
-    "https://files.catbox.moe/lc46od.jpg",
-    "https://files.catbox.moe/ee82s3.jpg",
-    "https://files.catbox.moe/jygtws.jpg"
+    "https://raw.githubusercontent.com/thetrueheavensequal/Shouko/refs/heads/main/Shouko/static/edt/komi_note1.jpg",
+    "https://raw.githubusercontent.com/thetrueheavensequal/Shouko/refs/heads/main/Shouko/static/edt/komi_note2.jpg",
+    "https://raw.githubusercontent.com/thetrueheavensequal/Shouko/refs/heads/main/Shouko/static/edt/komi_note3.jpg",
+    "https://raw.githubusercontent.com/thetrueheavensequal/Shouko/refs/heads/main/Shouko/static/edt/komi_note4.jpg",
+    "https://raw.githubusercontent.com/thetrueheavensequal/Shouko/refs/heads/main/Shouko/static/edt/komi_note5.jpg",
+    "https://raw.githubusercontent.com/thetrueheavensequal/Shouko/refs/heads/main/Shouko/static/edt/komi_note6.jpg",
+    "https://raw.githubusercontent.com/thetrueheavensequal/Shouko/refs/heads/main/Shouko/static/edt/komi_note7.jpg"
 ]
-
-app = Client("KomiBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-
 notes_db = {}
 
 async def get_bot_username():
     me = await app.get_me()
     return me.username
 
-@app.on_message(filters.command("start") & filters.private)
+@app.on_message(filters.command("note") & filters.private)
 async def start_message(_, message: Message):
     bot_username = await get_bot_username()
     intro = (
-        "Um... h-hi...\n"
-        "I'm Komi...\n"
-        "(blushes)\n\n"
+        "Um... I-I can help you send a note...\n"
         "You can send a quiet note to someone...\n"
         "Just tap the button below to start...\n\n"
         "I... hope it helps..."
