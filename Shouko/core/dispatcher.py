@@ -22,5 +22,5 @@ stickers, telegraph, tr, unbanall, users, warns, whispers, zombies
 
 # Import all handlers to register their commands and events
 from core.handlers import (
-    admin, afk, anime, chat, ban, ping, search, notebook, fun, welcome, start, help, waifu  # add any new handler modules here
+    admin, afk, anime, chat, ban, ping, search, notebook, fun, welcome, start, help, waifu, webshot  # add any new handler modules here
 )

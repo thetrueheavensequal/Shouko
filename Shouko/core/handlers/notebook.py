@@ -1,106 +1,122 @@
-from core.dispatcher import app
-from pyrogram import filters
+from pyrogram import Client, filters
+from pyrogram.types import (
+    InlineQueryResultArticle, InputTextMessageContent,
+    InlineKeyboardMarkup, InlineKeyboardButton, Message
+)
 import random
-import json
-import re
-from pathlib import Path
+from config import API_ID, API_HASH, BOT_TOKEN
 
-NOTEBOOK_FILE = Path("F:/Dev/Shouko/Shouko/static/komi_notebook.json")
+# Quiet and cute note-style images
+KOMI_NOTE_IMAGES = [
+    "https://files.catbox.moe/enzetg.jpg",
+    "https://files.catbox.moe/lc46od.jpg",
+    "https://files.catbox.moe/ee82s3.jpg",
+    "https://files.catbox.moe/jygtws.jpg"
+]
 
-def load_notes():
-    if NOTEBOOK_FILE.exists():
-        with open(NOTEBOOK_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
+app = Client("KomiBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-def save_notes(notes):
-    with open(NOTEBOOK_FILE, "w", encoding="utf-8") as f:
-        json.dump(notes, f, ensure_ascii=False, indent=2)
+notes_db = {}
 
-@app.on_message(filters.command(["note", "notebook"]) & filters.group & ~filters.me)
-async def send_note(client, message):
-    args = message.text.split(maxsplit=2)
-    if len(args) < 3:
-        await message.reply(
-            "To send an anonymous note, use:\n"
-            "/note user_id your message here\n\n"
-            "For example: /note 123456789 Hello!"
+async def get_bot_username():
+    me = await app.get_me()
+    return me.username
+
+@app.on_message(filters.command("start") & filters.private)
+async def start_message(_, message: Message):
+    bot_username = await get_bot_username()
+    intro = (
+        "Um... h-hi...\n"
+        "I'm Komi...\n"
+        "(blushes)\n\n"
+        "You can send a quiet note to someone...\n"
+        "Just tap the button below to start...\n\n"
+        "I... hope it helps..."
+    )
+    image = random.choice(KOMI_NOTE_IMAGES)
+    
+    await message.reply_photo(
+        photo=image,
+        caption=intro,
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton("✍️ Send a note", switch_inline_query="")]]
         )
-        return
+    )
+
+async def _whisper(_, inline_query):
+    data = inline_query.query.strip()
+    results = []
+    bot_username = await get_bot_username()
+    
+    if len(data.split()) < 2:
+        return [
+            InlineQueryResultArticle(
+                title="✍️ Send a note",
+                description=f"@{bot_username} [USERNAME or ID] [message]",
+                input_message_content=InputTextMessageContent(
+                    f"Um... try this:\n@{bot_username} @username Your message here..."
+                ),
+                thumb_url=random.choice(KOMI_NOTE_IMAGES),
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("✍️ Start", switch_inline_query="")]]
+                )
+            )
+        ]
+    
+    try:
+        target = data.split()[0]
+        note = data.split(None, 1)[1]
+        user = await app.get_users(target)
+    except:
+        return [
+            InlineQueryResultArticle(
+                title="✍️ Error...",
+                description="Couldn't find that user...",
+                input_message_content=InputTextMessageContent("Um... that username looks wrong..."),
+                thumb_url=random.choice(KOMI_NOTE_IMAGES)
+            )
+        ]
+    
+    notes_db[f"{inline_query.from_user.id}_{user.id}"] = note
+
+    markup = InlineKeyboardMarkup([[
+        InlineKeyboardButton("📩 Read note...", callback_data=f"note_{inline_query.from_user.id}_{user.id}")
+    ]])
+    
+    return [
+        InlineQueryResultArticle(
+            title="📮 Note ready",
+            description=f"Send a note to @{user.username}" if user.username else f"Send a note to {user.first_name}",
+            input_message_content=InputTextMessageContent(
+                f"(blushes)... I-I wrote something for you...\n\nClick to read it..."
+            ),
+            reply_markup=markup,
+            thumb_url=random.choice(KOMI_NOTE_IMAGES)
+        )
+    ]
+
+@app.on_callback_query(filters.regex(r"note_(.*)"))
+async def reveal_note(_, query):
+    _, from_id, to_id = query.data.split("_")
+    from_id = int(from_id)
+    to_id = int(to_id)
+    viewer_id = query.from_user.id
+
+    if viewer_id not in [from_id, to_id]:
+        return await query.answer("U-um... this note isn't for you...", show_alert=True)
 
     try:
-        user_id = int(args[1])
-        note = args[2].strip()
-    except ValueError:
-        await message.reply(
-            "Please use a valid user ID number.\n"
-            "Example: /note 123456789 Hello!"
-        )
-        return
+        note_text = notes_db[f"{from_id}_{to_id}"]
+    except:
+        note_text = "... I-I think the note is gone..."
 
-    if not note:
-        await message.reply("Please write a message after the user ID.")
-        return
+    await query.answer(note_text, show_alert=True)
 
-    # Rarely use the notebook phrase
-    import random
-    notebook_phrases = [
-        "(writes on notebook)",
-        "",
-        "",
-        "",
-        "",
-        "(scribbles quietly)",
-        "",
-        "",
-        "",
-        "",
-    ]
-    prefix = random.choice(notebook_phrases)
+@app.on_inline_query()
+async def bot_inline(_, inline_query):
+    query_text = inline_query.query.strip().lower()
 
-    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
-    # Hide note behind a button
-    await message.reply(
-        f"{prefix} Anonymous note for <code>{user_id}</code> is ready. Only the recipient can view it.",
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("📬 View Note", callback_data=f"view_note_{user_id}")]
-            ]
-        )
-    )
-
-# Callback handler for the button
-from pyrogram.types import CallbackQuery
-
-@app.on_callback_query(filters.regex(r"^view_note_(\d+)$"))
-async def reveal_note(client, callback_query: CallbackQuery):
-    user_id = int(callback_query.matches[0].group(1))
-    if callback_query.from_user.id != user_id:
-        await callback_query.answer("This note isn't for you!", show_alert=True)
-        return
-
-    # Find the original note message (you may want to store notes in a dict or DB for production)
-    # For demo, just parse from the replied message
-    note_cmd = callback_query.message.reply_to_message
-    if note_cmd and note_cmd.text:
-        args = note_cmd.text.split(maxsplit=2)
-        note = args[2] if len(args) > 2 else "No note found."
+    if not query_text:
+        return await inline_query.answer(await _whisper(_, inline_query), cache_time=0)
     else:
-        note = "No note found."
-
-    await callback_query.answer()
-    await callback_query.message.reply(
-        f"📖 Anonymous note for you:\n\n{note}",
-        quote=True
-    )
-    await callback_query.message.delete()
-
-@app.on_message(filters.command("readnote") & filters.private & ~filters.me)
-async def read_note_instructions(client, message):
-    await message.reply(
-        "(writes on notebook) To send an anonymous note, use:\n"
-        "/note user_id your message here\n\n"
-        "For example: /note 123456789 Hello!\n"
-        "(The user must have started me first)"
-    )
+        return await inline_query.answer(await _whisper(_, inline_query), cache_time=0)
